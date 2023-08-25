@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Box } from "@mui/material";
+import { getAuth, signInAnonymously } from "firebase/auth";
+import { auth } from "../config/firebase";
+// import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image';
+import { useState } from "react";
 
 const Home = (props) => {
   var svg;
@@ -9,6 +14,8 @@ const Home = (props) => {
   var boundaryX2 = 180;
   var boundaryY1 = -130;
   var boundaryY2 = 130;
+
+  const [dragableImage, setDragableImage] = useState();
 
   useEffect(() => {
     svg = document.getElementById('physixSvg');
@@ -24,6 +31,22 @@ const Home = (props) => {
     svg.addEventListener('touchend', endDrag);
     svg.addEventListener('touchleave', endDrag);
     svg.addEventListener('touchcancel', endDrag);
+
+    signInAnonymously(auth).then(result => {
+      const user = result.user;
+      console.log(`signed anonymously ${user.uid}`)
+    })
+
+    fetch('logo192.png')
+      .then(response => response.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          const dataUrl = reader.result;
+          setDragableImage(dataUrl);
+        };
+      });    
 
   }, []); 
 
@@ -96,15 +119,35 @@ const Home = (props) => {
   const onChomp = () => {
     console.log(`onchomp() is called`);
 
-    const draggable = document.getElementById('IpBlack');
-    const parent = draggable.parentNode;
+    // const draggable = document.getElementById('IpBlack');
+    // const parent = draggable.parentNode;
 
-    const x = draggable.getBoundingClientRect().left;
-    const y = draggable.getBoundingClientRect().top;
-    const px = parent.getBoundingClientRect().left;
-    const py = parent.getBoundingClientRect().top;
+    // const x = draggable.getBoundingClientRect().left;
+    // const y = draggable.getBoundingClientRect().top;
+    // const px = parent.getBoundingClientRect().left;
+    // const py = parent.getBoundingClientRect().top;
 
-    console.log(`X: ${x - px}, Y: ${y - py}`)
+    // console.log(`X: ${x - px}, Y: ${y - py}`)
+
+    const appWrapper = document.getElementById('html-content-holder');  
+    domtoimage.toPng(appWrapper)
+      .then(function(dataUrl) {
+        var link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = "result.png";
+        link.click();
+      })
+
+    // html2canvas(appWrapper, {
+    //   logging:true, letterRending:1, allowTaint:false, useCORS:true
+    // })
+    // .then(function(canvas) {
+    //   var image = canvas.toDataURL("image/png");
+    //   var link = document.createElement('a');
+    //   link.href = image;
+    //   link.download = "result.png";
+    //   link.click();
+    // })
   }
   
 
@@ -120,37 +163,39 @@ const Home = (props) => {
 
         <br/>
       </div>
+      <div style={{display: "flex", flexDirection: "column", alignItems:"center"}}>
+        <div className="app-wrapper" id="html-content-holder">
+          <figure>
+            <Box
+              component="img"
+              sx={{
+                height: 200,
+                width: 300,
+              }}
+              alt="The house from the offer."
+              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&w=350&dpr=2"
+              style={{border: "2px white solid"}}
+            />          
+            <figcaption>This is subject</figcaption>
+          </figure>
 
-      <div className="app-wrapper" id="html-content-holder">
-        <figure>
-          <Box
-            component="img"
-            sx={{
-              height: 200,
-              width: 300,
-            }}
-            alt="The house from the offer."
-            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&w=350&dpr=2"
-            style={{border: "2px white solid"}}
-          />          
-          <figcaption>This is subject</figcaption>
-        </figure>
-
-        <div className="graphic-wrapper">
-          <div className="graphic-row">I am a person online</div>
-          <div className="graphic-row">
-            <div className="graphic-column">Hate</div>
-            <div className="graphic-column graphic-border">
-              <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="-200 -150 400 300">
-                <image className="draggable" id="IpBlack" href="logo192.png" x="0" y="0" width="60" height="60" radius={30}/>
-              </svg>
+          <div className="graphic-wrapper">
+            <div className="graphic-row">I am a person online</div>
+            <div className="graphic-row">
+              <div className="graphic-column">Hate</div>
+              <div className="graphic-column graphic-border">
+                <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="-200 -150 400 300">
+                  {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
+                  <image className="draggable" id="IpBlack" xlinkHref={dragableImage} alt="logo" width="60" height="60" radius={30}/> 
+                </svg>
+              </div>
+              <div className="graphic-column">Love</div>
             </div>
-            <div className="graphic-column">Love</div>
+            <div className="graphic-row">I am a Physicist</div>
           </div>
-          <div className="graphic-row">I am a Physicist</div>
+          
+          <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>
         </div>
-        
-        <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>
       </div>
 
     </div>

@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../../config/firebase";
 
 const AuthChecker = ({ children }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  useEffect(() => {
-    if (auth.currentUser) {
-      navigate("/admin");
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // useEffect(() => {
+  //   if (auth.currentUser) {
+  //     navigate("/admin");
+  //   }
+  // }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <>{children}</>;
 };
