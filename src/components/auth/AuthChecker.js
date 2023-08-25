@@ -6,8 +6,8 @@ const AuthChecker = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      navigate("/login");
+    if (auth.currentUser) {
+      navigate("/admin");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
