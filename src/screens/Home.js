@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 
 const Home = (props) => {
-  const [svgPanel, setSvgPanel] = useState(null);
+  var svg;
   var selectedElement, offset, transform, bbox, minX, maxX, minY, maxY, confined;
 
   var boundaryX1 = 20;
@@ -11,7 +11,7 @@ const Home = (props) => {
   var boundaryY2 = 130;
 
   useEffect(() => {
-    const svg = document.getElementById('physixSvg');
+    svg = document.getElementById('physixSvg');
     if (svg == null)
       return;
 
@@ -25,14 +25,12 @@ const Home = (props) => {
     svg.addEventListener('touchleave', endDrag);
     svg.addEventListener('touchcancel', endDrag);
 
-    if (svgPanel == null)
-      setSvgPanel(svg)
-
-  }, [svgPanel]); 
+  }, []); 
 
   const getMousePosition = (evt) => {
-    var CTM = svgPanel.getScreenCTM();
+    var CTM = svg.getScreenCTM();
     if (evt.touches) { evt = evt.touches[0]; }
+
     return {
       x: (evt.clientX - CTM.e) / CTM.a,
       y: (evt.clientY - CTM.f) / CTM.d
@@ -49,7 +47,7 @@ const Home = (props) => {
 
       if (transforms.length === 0 || transforms.getItem(0).type !== SVGTransform.SVG_TRANSFORM_TRANSLATE) {
         // Create an transform that translates by (0, 0)
-        var translate = svgPanel.createSVGTransform();
+        var translate = svg.createSVGTransform();
         translate.setTranslate(0, 0);
         selectedElement.transform.baseVal.insertItemBefore(translate, 0);
       }
@@ -95,8 +93,23 @@ const Home = (props) => {
     selectedElement = false;
   }
 
+  const onChomp = () => {
+    console.log(`onchomp() is called`);
+
+    const draggable = document.getElementById('IpBlack');
+    const parent = draggable.parentNode;
+
+    const x = draggable.getBoundingClientRect().left;
+    const y = draggable.getBoundingClientRect().top;
+    const px = parent.getBoundingClientRect().left;
+    const py = parent.getBoundingClientRect().top;
+
+    console.log(`X: ${x - px}, Y: ${y - py}`)
+  }
+  
+
   return (
-    <div style={{background: "black", color:"white" }}>
+    <div>
       <div style={{ textAlign:"center" }}>
         <big><big><big><big>
         <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box
@@ -129,7 +142,7 @@ const Home = (props) => {
             <div className="graphic-column">Hate</div>
             <div className="graphic-column graphic-border">
               <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="-200 -150 400 300">
-                <circle className="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" strokeWidth="4"></circle>
+                <image className="draggable" id="IpBlack" href="logo192.png" x="0" y="0" width="60" height="60" radius={30}/>
               </svg>
             </div>
             <div className="graphic-column">Love</div>
@@ -137,7 +150,7 @@ const Home = (props) => {
           <div className="graphic-row">I am a Physicist</div>
         </div>
         
-        <button className="app-button" id="btn-Convert-Html2Image">Chomp</button>
+        <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>
       </div>
 
     </div>
