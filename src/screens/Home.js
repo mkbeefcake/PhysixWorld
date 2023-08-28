@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { Box } from "@mui/material";
-import { getAuth, signInAnonymously } from "firebase/auth";
-import { auth } from "../config/firebase";
-// import html2canvas from 'html2canvas';
+import { signInAnonymously } from "firebase/auth";
+import { auth, storage } from "../config/firebase";
 import domtoimage from 'dom-to-image';
 import { useState } from "react";
+import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
 
 const Home = (props) => {
   var svg;
@@ -16,6 +16,8 @@ const Home = (props) => {
   var boundaryY2 = 130;
 
   const [dragableImage, setDragableImage] = useState();
+  const [subject, setSubject] = useState("Default");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     svg = document.getElementById('physixSvg');
@@ -35,6 +37,7 @@ const Home = (props) => {
     signInAnonymously(auth).then(result => {
       const user = result.user;
       console.log(`signed anonymously ${user.uid}`)
+      setUserId(user.uid);
     })
 
     fetch('logo192.png')
@@ -119,16 +122,6 @@ const Home = (props) => {
   const onChomp = () => {
     console.log(`onchomp() is called`);
 
-    // const draggable = document.getElementById('IpBlack');
-    // const parent = draggable.parentNode;
-
-    // const x = draggable.getBoundingClientRect().left;
-    // const y = draggable.getBoundingClientRect().top;
-    // const px = parent.getBoundingClientRect().left;
-    // const py = parent.getBoundingClientRect().top;
-
-    // console.log(`X: ${x - px}, Y: ${y - py}`)
-
     const appWrapper = document.getElementById('html-content-holder');  
     domtoimage.toPng(appWrapper)
       .then(function(dataUrl) {
@@ -136,23 +129,30 @@ const Home = (props) => {
         link.href = dataUrl;
         link.download = "result.png";
         link.click();
-      })
 
-    // html2canvas(appWrapper, {
-    //   logging:true, letterRending:1, allowTaint:false, useCORS:true
-    // })
-    // .then(function(canvas) {
-    //   var image = canvas.toDataURL("image/png");
-    //   var link = document.createElement('a');
-    //   link.href = image;
-    //   link.download = "result.png";
-    //   link.click();
-    // })
+        // upload to firebase storage
+        debugger;
+        // const timestamp = new Date().getTime();    
+        // const name = `${subject}/${userId}/${timestamp}.png`;
+        const name = `${subject}/${userId}.png`;
+        const imageRef = storageRef(storage, name);
+        uploadString(imageRef, dataUrl, 'data_url')
+        .then(snapshot => {
+          getDownloadURL(snapshot.ref)
+          .then(url => {
+            console.log(`Downloadable URL : ${url}`)
+          })
+        })
+        .catch(err => {
+          console.log(`Not uploaded.`)
+        })
+      })
+     
   }
-  
+ 
 
   return (
-    <div>
+    <div style={{backgroundColor: "black", color:"white", height:"100vh"}}>
       <div style={{ textAlign:"center" }}>
         <big><big><big><big>
         <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box

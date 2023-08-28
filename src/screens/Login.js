@@ -39,6 +39,7 @@ const Login = (props) => {
         flexDirection={"column"}
         boxShadow={2}
         margin={3}
+        color={"white"}
       >
         <Box sx={{ borderBottom: 1, borderColor: "divider", width: "100%" }}>
           <Tabs value={value} onChange={handleChange} variant="fullWidth">
