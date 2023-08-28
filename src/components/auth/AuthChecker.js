@@ -6,9 +6,10 @@ const AuthChecker = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (auth.currentUser) {
-      console.log(`currentUser: ${JSON.stringify(auth.currentUser)}`)
-      // navigate("/admin");
+    console.log(`currentUser: ${JSON.stringify(auth.currentUser)}`)
+
+    if (auth.currentUser?.isAnonymous === true) {      
+      navigate("/");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -160,7 +160,6 @@ const Home = (props) => {
           2D Dialectic
         </span>
         </big></big></big></big>
-
         <br/>
       </div>
       <div style={{display: "flex", flexDirection: "column", alignItems:"center"}}>
