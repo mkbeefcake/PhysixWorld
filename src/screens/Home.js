@@ -34,12 +34,14 @@ const Home = (props) => {
     svg.addEventListener('touchleave', endDrag);
     svg.addEventListener('touchcancel', endDrag);
 
-    signInAnonymously(auth).then(result => {
-      const user = result.user;
-      console.log(`signed anonymously ${user.uid}`)
-      setUserId(user.uid);
-    })
-
+    if (!auth.currentUser) {
+      signInAnonymously(auth).then(result => {
+        const user = result.user;
+        console.log(`signed anonymously ${user.uid}`)
+        setUserId(user.uid);
+      })
+    }
+    
     fetch('logo192.png')
       .then(response => response.blob())
       .then(blob => {
