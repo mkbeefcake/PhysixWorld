@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { Box } from "@mui/material";
 import { signInAnonymously } from "firebase/auth";
-import { auth, storage } from "../config/firebase";
-import domtoimage from 'dom-to-image';
+import { auth, storage, db } from "../config/firebase";
 import { useState } from "react";
 import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import domtoimage from 'dom-to-image';
 
 const Home = (props) => {
   var svg;
@@ -16,8 +17,36 @@ const Home = (props) => {
   var boundaryY2 = 130;
 
   const [dragableImage, setDragableImage] = useState();
-  const [subject, setSubject] = useState("Default");
   const [userId, setUserId] = useState("");
+  const [topic, setTopic] = useState();
+
+  const loadData = async () => {
+    const q = query(collection(db, 'topics'), orderBy('timestamp', 'desc'), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const latestDocument = querySnapshot.docs[0].data();
+      setTopic(latestDocument);
+
+      fetch(latestDocument?.iconUrl, { 
+      })
+        .then(response => response.blob())
+        .then(blob => {
+          debugger;
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = () => {
+            const dataUrl = reader.result;
+            setDragableImage(dataUrl);
+          };
+        });    
+
+
+    }
+    else {
+      console.log('No documents found');
+    }
+  }
 
   useEffect(() => {
     svg = document.getElementById('physixSvg');
@@ -41,18 +70,11 @@ const Home = (props) => {
         setUserId(user.uid);
       })
     }
+    else {
+      setUserId(auth.currentUser.uid);
+    }
     
-    fetch('logo192.png')
-      .then(response => response.blob())
-      .then(blob => {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = () => {
-          const dataUrl = reader.result;
-          setDragableImage(dataUrl);
-        };
-      });    
-
+    loadData();
   }, []); 
 
   const getMousePosition = (evt) => {
@@ -123,7 +145,7 @@ const Home = (props) => {
 
   const onChomp = () => {
     console.log(`onchomp() is called`);
-
+    
     const appWrapper = document.getElementById('html-content-holder');  
     domtoimage.toPng(appWrapper)
       .then(function(dataUrl) {
@@ -134,20 +156,18 @@ const Home = (props) => {
 
         // upload to firebase storage
         debugger;
-        // const timestamp = new Date().getTime();    
-        // const name = `${subject}/${userId}/${timestamp}.png`;
-        const name = `votes/${subject}/${userId}.png`;
+        const name = `votes/${topic.timestamp}/${userId}.png`;
         const imageRef = storageRef(storage, name);
         uploadString(imageRef, dataUrl, 'data_url')
-        .then(snapshot => {
-          getDownloadURL(snapshot.ref)
-          .then(url => {
-            console.log(`Downloadable URL : ${url}`)
+          .then(snapshot => {
+            getDownloadURL(snapshot.ref)
+            .then(url => {
+              console.log(`Downloadable URL : ${url}`)
+            })
           })
-        })
-        .catch(err => {
-          console.log(`Not uploaded.`)
-        })
+          .catch(err => {
+            console.log(`Not uploaded.`)
+          })
       })
      
   }
@@ -159,7 +179,7 @@ const Home = (props) => {
         <big><big><big><big>
         <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box
           <br/>
-          2D Dialectic
+          {topic?.content}
         </span>
         </big></big></big></big>
         <br/>
@@ -173,26 +193,26 @@ const Home = (props) => {
                 height: 200,
                 width: 300,
               }}
-              alt="The house from the offer."
-              src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&w=350&dpr=2"
+              alt="Loading topic....."
+              src={topic?.url}
               style={{border: "2px white solid"}}
             />          
-            <figcaption>This is subject</figcaption>
+            <figcaption>{topic?.description}</figcaption>
           </figure>
 
           <div className="graphic-wrapper">
-            <div className="graphic-row">I am a person online</div>
+            <div className="graphic-row">{topic?.top}</div>
             <div className="graphic-row">
-              <div className="graphic-column">Hate</div>
+              <div className="graphic-column">{topic?.left}</div>
               <div className="graphic-column graphic-border">
                 <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="-200 -150 400 300">
                   {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
                   <image className="draggable" id="IpBlack" xlinkHref={dragableImage} alt="logo" width="60" height="60" radius={30}/> 
                 </svg>
               </div>
-              <div className="graphic-column">Love</div>
+              <div className="graphic-column">{topic?.right}</div>
             </div>
-            <div className="graphic-row">I am a Physicist</div>
+            <div className="graphic-row">{topic?.bottom}</div>
           </div>
           
           <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>

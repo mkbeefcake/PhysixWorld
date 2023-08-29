@@ -26,7 +26,8 @@ import { TextField } from "@mui/material";
 import { db, storage } from "../../config/firebase";
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
-
+import ImageList from '@mui/material/ImageList';
+import ImageListItem from "@mui/material/ImageListItem";
 
 const drawerWidth = 240;
 
@@ -60,10 +61,14 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 const Dashboard = () => {
 
   const canvasRef = useRef(null);
+  const canvas1Ref = useRef(null);
 
   const [topics, setTopics] = useState([]);
   const [open, setOpen] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile1, setSelectedFile1] = useState(null);
+
   const [name, setName] = useState();
   const [content, setContent] = useState();
   const [description, setDescription] = useState();
@@ -71,6 +76,8 @@ const Dashboard = () => {
   const [bottom, setBottom] = useState();
   const [left, setLeft] = useState();
   const [right, setRight] = useState();
+
+  const [voteData, setVoteData] = useState([]);
 
   const loadData = async() => {
     const querySnapshot = await getDocs(collection(db, "topics"));
@@ -89,6 +96,7 @@ const Dashboard = () => {
 
   const selectTopic = (topic) => {
     console.log(`Topic: ${JSON.stringify(topic)}`)
+    const timestamp = topic.timestamp;
   }
 
   const addNewTopic = () => {
@@ -114,24 +122,37 @@ const Dashboard = () => {
     reader.readAsDataURL(selectedFile);
     reader.onload = async (event) => {
       const timestamp = new Date().getTime().toString();
-      const imageName = `topics/${timestamp}.png`;
-      const imageRef = storageRef (storage, imageName);
-      uploadString(imageRef, event.target.result, 'data_url')
-        .then(snapshot => {
-          getDownloadURL(snapshot.ref)
-            .then(async url => {
 
-              // upload topics
-              const topicData = {
-                name, content, description, top, bottom, left, right, timestamp, url      
-              }    
-              await setDoc(doc(db, "topics", timestamp), topicData);
-              await loadData();
-            })                      
-        })
-        .catch(err => {
-          alert(`Error to upload topic`);
-        })
+      const imageName = `topics/${timestamp}/content.png`;
+      const imageRef = storageRef (storage, imageName);
+
+      try {
+        const snapshot = await uploadString(imageRef, event.target.result, 'data_url');
+        const url = await getDownloadURL(snapshot.ref);
+
+        const reader1 = new FileReader();
+        reader1.readAsDataURL(selectedFile1);
+        reader1.onload = async (_event) => {
+          
+          const iconName = `topics/${timestamp}/icon.png`;
+          const image1Ref = storageRef(storage, iconName);
+
+          const snapshot1 = await uploadString(image1Ref, _event.target.result, 'data_url');
+          const iconUrl = await getDownloadURL(snapshot1.ref);
+
+          // upload topics
+          const topicData = {
+            name, content, description, top, bottom, left, right, timestamp, url, iconUrl
+          }    
+
+          await setDoc(doc(db, "topics", timestamp), topicData);
+          await loadData();
+
+        }
+      }
+      catch (err) {
+        alert(`Error to upload topic`);
+      }
 
     }
 
@@ -155,6 +176,26 @@ const Dashboard = () => {
 
     reader.readAsDataURL(e.target.files[0]);
   }
+
+  const handleFileChange1 = (e) => {
+
+    setSelectedFile1(e.target.files[0]);    
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvas1Ref.current;
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+      img.src = event.target.result;
+    }
+
+    reader.readAsDataURL(e.target.files[0]);
+  }
+
 
   const handleNameChange = (e) => {
     setName(e.target.value)
@@ -249,20 +290,20 @@ const Dashboard = () => {
       </Drawer>
       <div>
         <DrawerHeader />
-        <Typography paragraph>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Rhoncus dolor purus non
-          enim praesent elementum facilisis leo vel. Risus at ultrices mi tempus
-          imperdiet. Semper risus in hendrerit gravida rutrum quisque non tellus.
-          Convallis convallis tellus id interdum velit laoreet id donec ultrices.
-          Odio morbi quis commodo odio aenean sed adipiscing. Amet nisl suscipit
-          adipiscing bibendum est ultricies integer quis. Cursus euismod quis viverra
-          nibh cras. Metus vulputate eu scelerisque felis imperdiet proin fermentum
-          leo. Mauris commodo quis imperdiet massa tincidunt. Cras tincidunt lobortis
-          feugiat vivamus at augue. At augue eget arcu dictum varius duis at
-          consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem donec massa
-          sapien faucibus et molestie ac.
-        </Typography>
+        <div>
+          <ImageList sx={{ width: 500, height: 450 }} cols={3} rowHeight={164}>
+            {voteData.map((item) => (
+              <ImageListItem key={item.img}>
+                <img
+                  src={`${item.img}?w=164&h=164&fit=crop&auto=format`}
+                  srcSet={`${item.img}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                  alt={item.title}
+                  loading="lazy"
+                />
+              </ImageListItem>
+            ))}
+          </ImageList>
+        </div>
       </div>
       <Dialog
         onClose={handleClose}
@@ -353,6 +394,15 @@ const Dashboard = () => {
           </div>
           <div>
             <canvas ref={canvasRef} width={300} height={200} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <input type="file"
+              accept="image/*"
+              onChange={handleFileChange1}
+              id="file-upload"/>
+          </div>
+          <div>
+            <canvas ref={canvas1Ref} width={50} height={50} />
           </div>
 
         </DialogContent>
