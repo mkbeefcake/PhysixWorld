@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -23,6 +23,8 @@ import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
 import Button from '@mui/material/Button';
 import { TextField } from "@mui/material";
+import { db } from "../../config/firebase";
+import { doc, setDoc } from 'firebase/firestore';
 
 const drawerWidth = 240;
 
@@ -55,7 +57,16 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 
 const Dashboard = () => {
 
-  const [open, setOpen] = React.useState(true);
+  const canvasRef = useRef(null);
+  const [open, setOpen] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [name, setName] = useState();
+  const [content, setContent] = useState();
+  const [description, setDescription] = useState();
+  const [top, setTop] = useState();
+  const [bottom, setBottom] = useState();
+  const [left, setLeft] = useState();
+  const [right, setRight] = useState();
 
   const addNewTopic = () => {
     setOpen(true);
@@ -63,6 +74,67 @@ const Dashboard = () => {
 
   const handleClose = () => {
     setOpen(false);
+  }
+
+  const handleSave = async () => {
+    setOpen(false);
+
+    debugger;
+    const topicData = {
+      name, content, description, top, bottom, left, right      
+    }
+    
+    const timestamp = new Date().getTime().toString();
+
+    // upload topics
+    await setDoc(doc(db, "topics", timestamp), topicData);
+  }
+
+  const handleFileChange = (e) => {
+
+    setSelectedFile(e.target.files[0]);    
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+      img.src = event.target.result;
+    }
+
+    reader.readAsDataURL(e.target.files[0]);
+  }
+
+  const handleNameChange = (e) => {
+    setName(e.target.value)
+  }
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value)
+  }
+
+  const handleDescriptionChange = (e) => {
+    setDescription(e.target.value)
+  }
+
+  const handleTop = (e) => {
+    setTop(e.target.value)
+  }
+
+  const handleBottom = (e) => {
+    setBottom(e.target.value)
+  }
+
+  const handleLeft = (e) => {
+    setLeft(e.target.value)
+  }
+
+  const handleRight = (e) => {
+    setRight(e.target.value)
   }
 
   return (
@@ -170,63 +242,79 @@ const Dashboard = () => {
             id="topic-name"
             label="Name of topic"
             variant="standard"
-            value={""}
+            value={name}
             margin="dense"
+            onChange={handleNameChange}
           />
           <TextField 
             fullWidth
             id="topic-content"
             label="Content"
             variant="standard"
-            value={""}
+            value={content}
             margin="dense"
+            onChange={handleContentChange}
           />
           <TextField 
             fullWidth
             id="topic-description"
             label="Description"
             variant="standard"
-            value={""}
+            value={description}
             margin="dense"
+            onChange={handleDescriptionChange}
           />
           <TextField 
             id="topic-top"
             label="Top"
             variant="standard"
-            value={""}
+            value={top}
             margin="dense"
             style={{marginRight: 20}}
+            onChange={handleTop}
           />
           <TextField 
             id="topic-bottom"
             label="Bottom"
             variant="standard"
-            value={""}
+            value={bottom}
             margin="dense"
+            onChange={handleBottom}
           />
           <TextField 
             id="topic-left"
             label="Left"
             variant="standard"
-            value={""}
+            value={left}
             margin="dense"
             style={{marginRight: 20}}
+            onChange={handleLeft}
           />
           <TextField 
             id="topic-right"
             label="Right"
             variant="standard"
-            value={""}
+            value={right}
             margin="dense"
+            onChange={handleRight}
           />
+          <div style={{ marginTop: 12 }}>
+            <input type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              id="file-upload"/>
+          </div>
+          <div>
+            <canvas ref={canvasRef} width={300} height={200} />
+          </div>
 
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={handleClose}>
+          <Button autoFocus onClick={handleSave}>
             Save Topic
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog>1
 
 
     </Box>

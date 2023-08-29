@@ -136,7 +136,7 @@ const Home = (props) => {
         debugger;
         // const timestamp = new Date().getTime();    
         // const name = `${subject}/${userId}/${timestamp}.png`;
-        const name = `${subject}/${userId}.png`;
+        const name = `votes/${subject}/${userId}.png`;
         const imageRef = storageRef(storage, name);
         uploadString(imageRef, dataUrl, 'data_url')
         .then(snapshot => {
