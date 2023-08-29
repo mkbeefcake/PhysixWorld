@@ -6,8 +6,6 @@ const AuthChecker = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log(`currentUser: ${JSON.stringify(auth.currentUser)}`)
-
     if (auth.currentUser?.isAnonymous === true) {      
       navigate("/");
     }

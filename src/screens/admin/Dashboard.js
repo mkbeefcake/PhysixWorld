@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -23,8 +23,10 @@ import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
 import Button from '@mui/material/Button';
 import { TextField } from "@mui/material";
-import { db } from "../../config/firebase";
-import { doc, setDoc } from 'firebase/firestore';
+import { db, storage } from "../../config/firebase";
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
+
 
 const drawerWidth = 240;
 
@@ -58,7 +60,9 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 const Dashboard = () => {
 
   const canvasRef = useRef(null);
-  const [open, setOpen] = useState(true);
+
+  const [topics, setTopics] = useState([]);
+  const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [name, setName] = useState();
   const [content, setContent] = useState();
@@ -67,6 +71,22 @@ const Dashboard = () => {
   const [bottom, setBottom] = useState();
   const [left, setLeft] = useState();
   const [right, setRight] = useState();
+
+  const loadData = async() => {
+    const querySnapshot = await getDocs(collection(db, "topics"));
+    var _topics = [];
+    querySnapshot.forEach((doc) => {
+      console.log(`${doc.id} => ${JSON.stringify(doc.data())}`)
+      _topics.push(doc.data());
+    })
+
+    _topics = _topics.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
+    setTopics(_topics);
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const addNewTopic = () => {
     setOpen(true);
@@ -77,17 +97,41 @@ const Dashboard = () => {
   }
 
   const handleSave = async () => {
-    setOpen(false);
 
-    debugger;
-    const topicData = {
-      name, content, description, top, bottom, left, right      
+    if (!selectedFile) {
+      alert('Please upload image file');
+      return;
     }
-    
-    const timestamp = new Date().getTime().toString();
 
-    // upload topics
-    await setDoc(doc(db, "topics", timestamp), topicData);
+    setOpen(false);
+    debugger;
+
+    // upload image to storage
+    const reader = new FileReader();
+    reader.readAsDataURL(selectedFile);
+    reader.onload = async (event) => {
+      const timestamp = new Date().getTime().toString();
+      const imageName = `topics/${timestamp}.png`;
+      const imageRef = storageRef (storage, imageName);
+      uploadString(imageRef, event.target.result, 'data_url')
+        .then(snapshot => {
+          getDownloadURL(snapshot.ref)
+            .then(async url => {
+
+              // upload topics
+              const topicData = {
+                name, content, description, top, bottom, left, right, timestamp, url      
+              }    
+              await setDoc(doc(db, "topics", timestamp), topicData);
+              await loadData();
+            })                      
+        })
+        .catch(err => {
+          alert(`Error to upload topic`);
+        })
+
+    }
+
   }
 
   const handleFileChange = (e) => {
@@ -188,13 +232,13 @@ const Dashboard = () => {
         </List>
         <Divider />
         <List>
-          {['All mail', 'Trash', 'Spam'].map((text, index) => (
-            <ListItem key={text} disablePadding>
+          {topics.map((content, index) => (
+            <ListItem key={index} disablePadding>
               <ListItemButton>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
-                <ListItemText primary={text} />
+                <ListItemText primary={content.name} />
               </ListItemButton>
             </ListItem>
           ))}
