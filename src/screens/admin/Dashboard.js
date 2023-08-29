@@ -25,7 +25,7 @@ import Button from '@mui/material/Button';
 import { TextField } from "@mui/material";
 import { db, storage } from "../../config/firebase";
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
-import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
+import { getDownloadURL, ref as storageRef, uploadString, list as storageList } from "firebase/storage";
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from "@mui/material/ImageListItem";
 
@@ -94,9 +94,34 @@ const Dashboard = () => {
     loadData();
   }, []);
 
-  const selectTopic = (topic) => {
-    console.log(`Topic: ${JSON.stringify(topic)}`)
+  const selectTopic = async (topic) => {
     const timestamp = topic.timestamp;
+    console.log(`Topic: ${topic.timestamp}`)
+
+    // load all images
+    const listRef = storageRef(storage, `votes/${timestamp}`);
+    let _voteUrls = [];
+    let firstPage = await storageList(listRef, { maxResults: 100});
+
+    for (var index = 0; index < firstPage.items.length; index++) {
+      const url = await getDownloadURL(firstPage.items[index]);     
+      _voteUrls.push(url);
+    }
+
+    while (firstPage.nextPageToken) {
+      firstPage = await storageList(listRef, {
+        maxResults: 100,
+        pageToken: firstPage.nextPageToken
+      });
+
+      for (var index1 = 0; index1 < firstPage.items.length; index1++) {
+        const url = await getDownloadURL(firstPage.items[index1]);     
+        _voteUrls.push(url);
+      }
+    }
+
+    setVoteData(_voteUrls);
+
   }
 
   const addNewTopic = () => {
@@ -291,13 +316,12 @@ const Dashboard = () => {
       <div>
         <DrawerHeader />
         <div>
-          <ImageList sx={{ width: 500, height: 450 }} cols={3} rowHeight={164}>
-            {voteData.map((item) => (
-              <ImageListItem key={item.img}>
+          <ImageList sx={{ width: 900, height: 520 }} cols={3} rowHeight={520}>
+            {voteData.map((item, index) => (
+              <ImageListItem key={index}>
                 <img
-                  src={`${item.img}?w=164&h=164&fit=crop&auto=format`}
-                  srcSet={`${item.img}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                  alt={item.title}
+                  src={item}
+                  alt={item}
                   loading="lazy"
                 />
               </ImageListItem>
