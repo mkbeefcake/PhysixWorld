@@ -76,7 +76,6 @@ const Dashboard = () => {
     const querySnapshot = await getDocs(collection(db, "topics"));
     var _topics = [];
     querySnapshot.forEach((doc) => {
-      console.log(`${doc.id} => ${JSON.stringify(doc.data())}`)
       _topics.push(doc.data());
     })
 
@@ -87,6 +86,10 @@ const Dashboard = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const selectTopic = (topic) => {
+    console.log(`Topic: ${JSON.stringify(topic)}`)
+  }
 
   const addNewTopic = () => {
     setOpen(true);
@@ -234,7 +237,7 @@ const Dashboard = () => {
         <List>
           {topics.map((content, index) => (
             <ListItem key={index} disablePadding>
-              <ListItemButton>
+              <ListItemButton onClick={() => selectTopic(content)}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
