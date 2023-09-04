@@ -157,8 +157,8 @@ const Home = (props) => {
         const IpBlack = document.getElementById('IpBlack');
         const boundingBox = physixSvg.getBoundingClientRect();
         const boundingIp = IpBlack.getBoundingClientRect();
-        const centerXOfBoundingIp = boundingIp.left + boundingIp.width / 2 - boundingBox.left;
-        const centerYOfBoundingIp = boundingIp.top + boundingIp.height / 2 - boundingBox.top;
+        const centerXOfBoundingIp = boundingIp.left - boundingBox.left;  // + boundingIp.width / 2
+        const centerYOfBoundingIp = boundingIp.top  - boundingBox.top; // + boundingIp.height / 2
 
         console.log(`${boundingBox.width}, ${boundingBox.height}, ${centerXOfBoundingIp}, ${centerYOfBoundingIp}, ${boundingIp.width}, ${boundingIp.height}`);
 
@@ -232,7 +232,7 @@ const Home = (props) => {
             <div className="graphic-row">
               <div className="graphic-column">{topic?.left}</div>
               <div className="graphic-column graphic-border">
-                <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="-200 -150 400 300">
+                <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="0 0 250 250">
                   {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
                   <image className="draggable" id="IpBlack" xlinkHref={dragableImage} alt="logo" width="60" height="60" radius={30}/> 
                 </svg>

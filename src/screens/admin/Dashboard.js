@@ -23,11 +23,13 @@ import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
 import Button from '@mui/material/Button';
 import { TextField } from "@mui/material";
-import { db, storage } from "../../config/firebase";
-import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { auth, db, storage } from "../../config/firebase";
+import { doc, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString, list as storageList } from "firebase/storage";
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from "@mui/material/ImageListItem";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
 
 const drawerWidth = 240;
 
@@ -60,10 +62,13 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 
 const Dashboard = () => {
 
+  const navigate = useNavigate();
+
   const canvasRef = useRef(null);
   const canvas1Ref = useRef(null);
 
   const [topics, setTopics] = useState([]);
+  const [curTopic, setCurTopic] = useState(null);
   const [open, setOpen] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -97,35 +102,55 @@ const Dashboard = () => {
   const selectTopic = async (topic) => {
     const timestamp = topic.timestamp;
     console.log(`Topic: ${topic.timestamp}`)
+    setCurTopic(topic);
+
+    debugger;
+    const docRef = doc(db, `votes`, topic.timestamp);
+    const _doc = await getDoc(docRef);
+    if (_doc.exists() === true) {
+      let votes = [];
+      for (const field in _doc.data()) {
+        votes.push(_doc.data()[field]);
+      }
+      setVoteData(votes);
+    }
+    else {
+      alert(`Vote data is not existed`);
+    }
 
     // load all images
-    const listRef = storageRef(storage, `votes/${timestamp}`);
-    let _voteUrls = [];
-    let firstPage = await storageList(listRef, { maxResults: 100});
+    // const listRef = storageRef(storage, `votes/${timestamp}`);
+    // let _voteUrls = [];
+    // let firstPage = await storageList(listRef, { maxResults: 100});
 
-    for (var index = 0; index < firstPage.items.length; index++) {
-      const url = await getDownloadURL(firstPage.items[index]);     
-      _voteUrls.push(url);
-    }
+    // for (var index = 0; index < firstPage.items.length; index++) {
+    //   const url = await getDownloadURL(firstPage.items[index]);     
+    //   _voteUrls.push(url);
+    // }
 
-    while (firstPage.nextPageToken) {
-      firstPage = await storageList(listRef, {
-        maxResults: 100,
-        pageToken: firstPage.nextPageToken
-      });
+    // while (firstPage.nextPageToken) {
+    //   firstPage = await storageList(listRef, {
+    //     maxResults: 100,
+    //     pageToken: firstPage.nextPageToken
+    //   });
 
-      for (var index1 = 0; index1 < firstPage.items.length; index1++) {
-        const url = await getDownloadURL(firstPage.items[index1]);     
-        _voteUrls.push(url);
-      }
-    }
+    //   for (var index1 = 0; index1 < firstPage.items.length; index1++) {
+    //     const url = await getDownloadURL(firstPage.items[index1]);     
+    //     _voteUrls.push(url);
+    //   }
+    // }
 
-    setVoteData(_voteUrls);
+    // setVoteData(_voteUrls);
 
   }
 
   const addNewTopic = () => {
     setOpen(true);
+  }
+
+  const logout = async () => {
+    await signOut(auth);
+    navigate("/");
   }
 
   const handleClose = () => {
@@ -263,7 +288,7 @@ const Dashboard = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Votes
+            Selected Topic: {curTopic?.name}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -311,22 +336,74 @@ const Dashboard = () => {
             </ListItem>
           ))}
         </List>
+        <Divider />
+        <List>
+          {['Log Out'].map((text, index) => (
+            <ListItem key={text} disablePadding>
+              <ListItemButton onClick={logout}>
+                <ListItemIcon>
+                  <MailIcon />
+                </ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
       </Drawer>
       <div>
         <DrawerHeader />
-        <div>
-          <ImageList sx={{ width: 900, height: 520 }} cols={3} rowHeight={520}>
-            {voteData.map((item, index) => (
-              <ImageListItem key={index}>
-                <img
-                  src={item}
-                  alt={item}
-                  loading="lazy"
-                />
-              </ImageListItem>
-            ))}
-          </ImageList>
-        </div>
+          <div style={{backgroundColor: "black", color:"white", height:"100vh"}}>
+            <div style={{ textAlign:"center" }}>
+              <big><big><big><big>
+              <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box
+                <br/>
+                {curTopic?.content}
+              </span>
+              </big></big></big></big>
+              <br/>
+            </div>
+            <div style={{display: "flex", flexDirection: "column", alignItems:"center"}}>
+              <div className="app-wrapper" id="html-content-holder">
+                <figure>
+                  <Box
+                    component="img"
+                    sx={{
+                      height: 200,
+                      width: 300,
+                    }}
+                    alt="Loading topic....."
+                    src={curTopic?.url}
+                    style={{border: "2px white solid"}}
+                  />          
+                  <figcaption>{curTopic?.description}</figcaption>
+                </figure>
+
+                <div className="graphic-wrapper">
+                  <div className="graphic-row">{curTopic?.top}</div>
+                  <div className="graphic-row">
+                    <div className="graphic-column">{curTopic?.left}</div>
+                    <div className="graphic-column graphic-border">
+                      <svg id="physixSvg" width="250" height="250" className="supra-gradient">
+                        {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
+                        {
+                          voteData.map((a, index) => 
+                            <image className="draggable" id={index} xlinkHref={curTopic?.iconUrl} 
+                              x={a.posX} y = {a.posY}
+                              alt="logo" width={a.imgWidth} height={a.imgHeight} /> 
+                          )
+                        }
+                        
+                      </svg>
+                    </div>
+                    <div className="graphic-column">{curTopic?.right}</div>
+                  </div>
+                  <div className="graphic-row">{curTopic?.bottom}</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
       </div>
       <Dialog
         onClose={handleClose}
