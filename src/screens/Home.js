@@ -4,7 +4,7 @@ import { signInAnonymously } from "firebase/auth";
 import { auth, storage, db } from "../config/firebase";
 import { useState } from "react";
 import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import domtoimage from 'dom-to-image';
 
 const Home = (props) => {
@@ -32,7 +32,6 @@ const Home = (props) => {
       })
         .then(response => response.blob())
         .then(blob => {
-          debugger;
           const reader = new FileReader();
           reader.readAsDataURL(blob);
           reader.onloadend = () => {
@@ -148,26 +147,54 @@ const Home = (props) => {
     
     const appWrapper = document.getElementById('html-content-holder');  
     domtoimage.toPng(appWrapper)
-      .then(function(dataUrl) {
+      .then(async function(dataUrl) {
         var link = document.createElement('a');
         link.href = dataUrl;
         link.download = "result.png";
         link.click();
 
-        // upload to firebase storage
+        const physixSvg = document.getElementById('physixSvg');
+        const IpBlack = document.getElementById('IpBlack');
+        const boundingBox = physixSvg.getBoundingClientRect();
+        const boundingIp = IpBlack.getBoundingClientRect();
+        const centerXOfBoundingIp = boundingIp.left + boundingIp.width / 2 - boundingBox.left;
+        const centerYOfBoundingIp = boundingIp.top + boundingIp.height / 2 - boundingBox.top;
+
+        console.log(`${boundingBox.width}, ${boundingBox.height}, ${centerXOfBoundingIp}, ${centerYOfBoundingIp}, ${boundingIp.width}, ${boundingIp.height}`);
+
+        let content = {}
+        content[userId] = {
+          width: boundingBox.width,
+          height: boundingBox.height,
+          posX: centerXOfBoundingIp,
+          posY: centerYOfBoundingIp,
+          imgWidth: boundingIp.width,
+          imgHeight: boundingIp.height
+        };
+
+        // upload data to firestore
         debugger;
-        const name = `votes/${topic.timestamp}/${userId}.png`;
-        const imageRef = storageRef(storage, name);
-        uploadString(imageRef, dataUrl, 'data_url')
-          .then(snapshot => {
-            getDownloadURL(snapshot.ref)
-            .then(url => {
-              console.log(`Downloadable URL : ${url}`)
-            })
-          })
-          .catch(err => {
-            console.log(`Not uploaded.`)
-          })
+        const docRef = doc(db, `votes`, topic.timestamp);
+        const _doc = await getDoc(docRef);
+        if (_doc.exists())
+          await updateDoc(docRef, content);
+        else
+          await setDoc(docRef, content);
+
+        // upload to firebase storage
+        // debugger;
+        // const name = `votes/${topic.timestamp}/${userId}.png`;
+        // const imageRef = storageRef(storage, name);
+        // uploadString(imageRef, dataUrl, 'data_url')
+        //   .then(snapshot => {
+        //     getDownloadURL(snapshot.ref)
+        //     .then(url => {
+        //       console.log(`Downloadable URL : ${url}`)
+        //     })
+        //   })
+        //   .catch(err => {
+        //     console.log(`Not uploaded.`)
+        //   })
       })
      
   }

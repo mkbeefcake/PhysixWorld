@@ -140,7 +140,6 @@ const Dashboard = () => {
     }
 
     setOpen(false);
-    debugger;
 
     // upload image to storage
     const reader = new FileReader();
