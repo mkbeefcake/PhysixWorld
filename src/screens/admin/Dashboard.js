@@ -116,6 +116,7 @@ const Dashboard = () => {
     }
     else {
       alert(`Vote data is not existed`);
+      setVoteData([]);
     }
 
     // load all images
@@ -277,7 +278,7 @@ const Dashboard = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed" open="true">
+      <AppBar position="fixed" open="true" style={{background:"black"}} >
         <Toolbar>
           <IconButton
             color="inherit"
@@ -305,7 +306,7 @@ const Dashboard = () => {
         anchor="left"
         open="true"
       >
-        <DrawerHeader style={{justifyContent: "flex-start", background: "#1976d2", color: "white"}}>
+        <DrawerHeader style={{justifyContent: "flex-start", background: "black", color: "white"}}>
           <Typography variant="h6" noWrap component="div">
               Topics
           </Typography>
@@ -326,7 +327,7 @@ const Dashboard = () => {
         <Divider />
         <List>
           {topics.map((content, index) => (
-            <ListItem key={index} disablePadding>
+            <ListItem key={index} disablePadding selected={content.timestamp === curTopic?.timestamp}>
               <ListItemButton onClick={() => selectTopic(content)}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
@@ -350,9 +351,9 @@ const Dashboard = () => {
           ))}
         </List>
       </Drawer>
-      <div>
+      <div style={{backgroundColor: "black", color:"white", height:"100vh", width:"100%"}}>
         <DrawerHeader />
-          <div style={{backgroundColor: "black", color:"white", height:"100vh"}}>
+          <div>
             <div style={{ textAlign:"center" }}>
               <big><big><big><big>
               <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box

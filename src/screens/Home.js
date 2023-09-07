@@ -6,6 +6,20 @@ import { useState } from "react";
 import { getDownloadURL, ref as storageRef, uploadString } from "firebase/storage";
 import { collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import domtoimage from 'dom-to-image';
+import CssBaseline from "@mui/material/CssBaseline";
+import Drawer from '@mui/material/Drawer';
+import { styled } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import MailIcon from '@mui/icons-material/Mail';
+
+const drawerWidth = 240;
 
 const Home = (props) => {
   var svg;
@@ -19,32 +33,37 @@ const Home = (props) => {
   const [dragableImage, setDragableImage] = useState();
   const [userId, setUserId] = useState("");
   const [topic, setTopic] = useState();
+  const [topics, setTopics] = useState([]);
+  const [curTopic, setCurTopic] = useState(null);
 
   const loadData = async () => {
-    const q = query(collection(db, 'topics'), orderBy('timestamp', 'desc'), limit(1));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(collection(db, "topics"));
+    var _topics = [];
+    querySnapshot.forEach((doc) => {
+      _topics.push(doc.data());
+    })
 
-    if (!querySnapshot.empty) {
-      const latestDocument = querySnapshot.docs[0].data();
-      setTopic(latestDocument);
+    _topics = _topics.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
+    setTopics(_topics);
+    setTopic(_topics[0])
+  }
 
-      fetch(latestDocument?.iconUrl, { 
-      })
-        .then(response => response.blob())
-        .then(blob => {
-          const reader = new FileReader();
-          reader.readAsDataURL(blob);
-          reader.onloadend = () => {
-            const dataUrl = reader.result;
-            setDragableImage(dataUrl);
-          };
-        });    
+  const selectTopic = async (topic) => {
+    debugger;
+    setTopic(topic);
 
+    fetch(topic?.iconUrl, { 
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          const dataUrl = reader.result;
+          setDragableImage(dataUrl);
+        };
+      });    
 
-    }
-    else {
-      console.log('No documents found');
-    }
   }
 
   useEffect(() => {
@@ -198,55 +217,100 @@ const Home = (props) => {
       })
      
   }
- 
+
+  const DrawerHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    padding: theme.spacing(0, 1),
+    // necessary for content to be below app bar
+    ...theme.mixins.toolbar,
+    justifyContent: 'flex-end',
+  }));
+    
 
   return (
-    <div style={{backgroundColor: "black", color:"white", height:"100vh"}}>
-      <div style={{ textAlign:"center" }}>
-        <big><big><big><big>
-        <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+        variant="persistent"
+        anchor="left"
+        open="true"
+      >
+        <DrawerHeader style={{justifyContent: "flex-start", background: "black", color: "white"}}>
+          <Typography variant="h6" noWrap component="div">
+              Topics
+          </Typography>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          {topics.map((content, index) => (
+            <ListItem key={index} disablePadding selected={content.timestamp === topic.timestamp}>
+              <ListItemButton onClick={() => selectTopic(content)}>
+                <ListItemIcon>
+                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                </ListItemIcon>
+                <ListItemText primary={content.name} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+
+      <div style={{backgroundColor: "black", color:"white", height:"100vh", width: "100%"}}>
+        <div style={{ textAlign:"center" }}>
+          <big><big><big><big>
+          <span style={{ fontWeight:"bold", fontFamily:"Courier New", Color: "white"}}>Chompsky Box
+            <br/>
+            {topic?.content}
+          </span>
+          </big></big></big></big>
           <br/>
-          {topic?.content}
-        </span>
-        </big></big></big></big>
-        <br/>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", alignItems:"center"}}>
-        <div className="app-wrapper" id="html-content-holder">
-          <figure>
-            <Box
-              component="img"
-              sx={{
-                height: 200,
-                width: 300,
-              }}
-              alt="Loading topic....."
-              src={topic?.url}
-              style={{border: "2px white solid"}}
-            />          
-            <figcaption>{topic?.description}</figcaption>
-          </figure>
-
-          <div className="graphic-wrapper">
-            <div className="graphic-row">{topic?.top}</div>
-            <div className="graphic-row">
-              <div className="graphic-column">{topic?.left}</div>
-              <div className="graphic-column graphic-border">
-                <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="0 0 250 250">
-                  {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
-                  <image className="draggable" id="IpBlack" xlinkHref={dragableImage} alt="logo" width="60" height="60" radius={30}/> 
-                </svg>
-              </div>
-              <div className="graphic-column">{topic?.right}</div>
-            </div>
-            <div className="graphic-row">{topic?.bottom}</div>
-          </div>
-          
-          <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>
         </div>
-      </div>
+        <div style={{display: "flex", flexDirection: "column", alignItems:"center"}}>
+          <div className="app-wrapper" id="html-content-holder">
+            <figure>
+              <Box
+                component="img"
+                sx={{
+                  height: 200,
+                  width: 300,
+                }}
+                alt="Loading topic....."
+                src={topic?.url}
+                style={{border: "2px white solid"}}
+              />          
+              <figcaption>{topic?.description}</figcaption>
+            </figure>
 
-    </div>
+            <div className="graphic-wrapper">
+              <div className="graphic-row">{topic?.top}</div>
+              <div className="graphic-row">
+                <div className="graphic-column">{topic?.left}</div>
+                <div className="graphic-column graphic-border">
+                  <svg id="physixSvg" width="250" height="250" className="supra-gradient" viewBox="0 0 250 250">
+                    {/* <circle class="draggable" id="IpBlack" transform="translate(0 30)" r="40" cx="10" cy="10" stroke="white" stroke-width="4"></circle> */}
+                    <image className="draggable" id="IpBlack" xlinkHref={dragableImage} alt="logo" width="60" height="60" radius={30}/> 
+                  </svg>
+                </div>
+                <div className="graphic-column">{topic?.right}</div>
+              </div>
+              <div className="graphic-row">{topic?.bottom}</div>
+            </div>
+            
+            <button className="app-button" id="btn-Convert-Html2Image" onClick={onChomp} >Chomp</button>
+          </div>
+        </div>
+
+      </div>
+    </Box>
   );
 };
 
